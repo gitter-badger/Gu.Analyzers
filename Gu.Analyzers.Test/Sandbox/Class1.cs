@@ -4,7 +4,7 @@
     {
         public Foo(int a)
         {
-            a = a;
+            this.A = a;
         }
 
         public int A { get; private set; }

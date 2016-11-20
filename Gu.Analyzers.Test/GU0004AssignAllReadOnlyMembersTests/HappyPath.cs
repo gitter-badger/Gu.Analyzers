@@ -26,6 +26,26 @@ namespace Gu.Analyzers.Test.GU0004AssignAllReadOnlyMembersTests
         }
 
         [Test]
+        public async Task StaticConstructorSettingProperties()
+        {
+            var testCode = @"
+    public class Foo
+    {
+        static Foo()
+        {
+            A = 1;
+            B = 2;
+        }
+
+        public static int A { get; }
+
+        public static int B { get; }
+    }";
+            await this.VerifyHappyPathAsync(testCode)
+                      .ConfigureAwait(false);
+        }
+
+        [Test]
         public async Task ConstructorSettingAllFields()
         {
             var testCode = @"
@@ -38,6 +58,26 @@ namespace Gu.Analyzers.Test.GU0004AssignAllReadOnlyMembersTests
         {
             this.a = a;
             this.b = b;
+        }
+    }";
+            await this.VerifyHappyPathAsync(testCode)
+                      .ConfigureAwait(false);
+        }
+
+        [Test]
+        public async Task StaticConstructorSettingFields()
+        {
+            var testCode = @"
+    public class Foo
+    {
+        public static readonly int A;
+
+        public static readonly int B;
+
+        static Foo()
+        {
+            A = 1;
+            B = 2;
         }
     }";
             await this.VerifyHappyPathAsync(testCode)

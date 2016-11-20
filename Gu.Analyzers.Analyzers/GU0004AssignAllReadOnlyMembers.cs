@@ -44,10 +44,6 @@
         private static void HandleConstructor(SyntaxNodeAnalysisContext context)
         {
             var constructorDeclarationSyntax = (ConstructorDeclarationSyntax)context.Node;
-            if (constructorDeclarationSyntax.ParameterList.Parameters.Count == 0)
-            {
-                return;
-            }
 
             using (var walker = CtorWalker.Create(constructorDeclarationSyntax, context.SemanticModel, context.CancellationToken))
             {
@@ -96,6 +92,7 @@
 
             private static IEnumerable<string> ReadOnlies(ConstructorDeclarationSyntax ctor, SemanticModel semanticModel, CancellationToken cancellationToken)
             {
+                var isStatic = semanticModel.GetDeclaredSymbol(ctor, cancellationToken).IsStatic;
                 var classDeclarationSyntax = (ClassDeclarationSyntax)ctor.Parent;
                 foreach (var member in classDeclarationSyntax.Members)
                 {
@@ -107,7 +104,7 @@
                         if (declaration.Variables.TryGetSingle(out variable))
                         {
                             var symbol = (IFieldSymbol)semanticModel.GetDeclaredSymbol(variable, cancellationToken);
-                            if (symbol.IsReadOnly && !symbol.IsStatic && variable.Initializer == null)
+                            if (symbol.IsReadOnly && symbol.IsStatic == isStatic && variable.Initializer == null)
                             {
                                 yield return fieldDeclarationSyntax.Identifier().ValueText;
                             }
@@ -120,7 +117,7 @@
                     if (propertyDeclarationSyntax != null)
                     {
                         var symbol = semanticModel.GetDeclaredSymbol(propertyDeclarationSyntax, cancellationToken);
-                        if (symbol.IsReadOnly && !symbol.IsStatic && propertyDeclarationSyntax.Initializer == null)
+                        if (symbol.IsReadOnly && symbol.IsStatic == isStatic && propertyDeclarationSyntax.Initializer == null)
                         {
                             yield return propertyDeclarationSyntax.Identifier().ValueText;
                         }

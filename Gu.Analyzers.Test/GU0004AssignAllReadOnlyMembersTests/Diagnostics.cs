@@ -48,5 +48,48 @@
                                .WithMessage("Assign all readonly members.");
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
         }
+
+        [Test]
+        public async Task StaticConstructorSettingProperties()
+        {
+            var testCode = @"
+    public class Foo
+    {
+        ↓static Foo()
+        {
+            A = 1;
+        }
+
+        public static int A { get; }
+
+        public static int B { get; }
+    }";
+            var expected = this.CSharpDiagnostic()
+                               .WithLocationIndicated(ref testCode)
+                               .WithMessage("Assign all readonly members.");
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        [Test]
+        public async Task StaticConstructorNotSettingField()
+        {
+            var testCode = @"
+    public class Foo
+    {
+        public static readonly int A;
+
+        public static readonly int B;
+
+        ↓static Foo()
+        {
+            A = 1;
+        }
+    }";
+
+            var expected = this.CSharpDiagnostic()
+                               .WithLocationIndicated(ref testCode)
+                               .WithMessage("Assign all readonly members.");
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+        }
     }
 }

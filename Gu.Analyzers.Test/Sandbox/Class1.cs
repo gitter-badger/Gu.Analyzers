@@ -2,11 +2,11 @@
 {
     public class Foo
     {
-        public Foo(int a)
+        static Foo()
         {
-            this.A = a;
+            A = 1;
         }
 
-        public int A { get; private set; }
+        public static int A { get; }
     }
 }

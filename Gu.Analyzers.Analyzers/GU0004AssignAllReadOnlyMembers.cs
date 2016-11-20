@@ -1,5 +1,7 @@
 ﻿namespace Gu.Analyzers
 {
+    using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Linq;
@@ -47,23 +49,38 @@
                 return;
             }
 
-            var walker = new CtorWalker(constructorDeclarationSyntax, context.SemanticModel, context.CancellationToken);
-            walker.Visit(constructorDeclarationSyntax);
-            if (walker.readOnlies.Any())
+            using (var walker = CtorWalker.Create(constructorDeclarationSyntax, context.SemanticModel, context.CancellationToken))
             {
-                context.ReportDiagnostic(Diagnostic.Create(Descriptor, constructorDeclarationSyntax.GetLocation()));
+                if (walker.Unassigned.Any())
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(Descriptor, constructorDeclarationSyntax.GetLocation()));
+                }
             }
         }
 
-        private class CtorWalker : CSharpSyntaxWalker
+        private class CtorWalker : CSharpSyntaxWalker, IDisposable
         {
-            private readonly ConstructorDeclarationSyntax ctor;
-            internal readonly List<string> readOnlies;
+            private static readonly ConcurrentQueue<CtorWalker> Cache = new ConcurrentQueue<CtorWalker>();
 
-            public CtorWalker(ConstructorDeclarationSyntax ctor, SemanticModel semanticModel, CancellationToken cancellationToken)
+            private readonly List<string> readOnlies = new List<string>();
+
+            private CtorWalker()
             {
-                this.ctor = ctor;
-                this.readOnlies = ReadOnlies(ctor, semanticModel, cancellationToken).ToList();
+            }
+
+            public IReadOnlyList<string> Unassigned => this.readOnlies;
+
+            public static CtorWalker Create(ConstructorDeclarationSyntax constructor, SemanticModel semanticModel, CancellationToken cancellationToken)
+            {
+                CtorWalker walker;
+                if (!Cache.TryDequeue(out walker))
+                {
+                    walker = new CtorWalker();
+                }
+
+                walker.readOnlies.AddRange(ReadOnlies(constructor, semanticModel, cancellationToken));
+                walker.Visit(constructor);
+                return walker;
             }
 
             public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
@@ -95,7 +112,7 @@
                     var propertyDeclarationSyntax = member as PropertyDeclarationSyntax;
                     if (propertyDeclarationSyntax != null)
                     {
-                        var symbol = (IPropertySymbol)semanticModel.GetDeclaredSymbol(propertyDeclarationSyntax, cancellationToken);
+                        var symbol = semanticModel.GetDeclaredSymbol(propertyDeclarationSyntax, cancellationToken);
                         if (symbol.IsReadOnly && !symbol.IsStatic)
                         {
                             yield return propertyDeclarationSyntax.Identifier().ValueText;
@@ -119,6 +136,12 @@
                 }
 
                 return false;
+            }
+
+            public void Dispose()
+            {
+                this.readOnlies.Clear();
+                Cache.Enqueue(this);
             }
         }
     }

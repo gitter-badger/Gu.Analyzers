@@ -102,18 +102,25 @@
                     var fieldDeclarationSyntax = member as FieldDeclarationSyntax;
                     if (fieldDeclarationSyntax != null)
                     {
-                        var symbol = (IFieldSymbol)semanticModel.GetDeclaredSymbol(fieldDeclarationSyntax.Declaration.Variables[0], cancellationToken);
-                        if (symbol.IsReadOnly && !symbol.IsStatic)
+                        var declaration = fieldDeclarationSyntax.Declaration;
+                        VariableDeclaratorSyntax variable;
+                        if (declaration.Variables.TryGetSingle(out variable))
                         {
-                            yield return fieldDeclarationSyntax.Identifier().ValueText;
+                            var symbol = (IFieldSymbol)semanticModel.GetDeclaredSymbol(variable, cancellationToken);
+                            if (symbol.IsReadOnly && !symbol.IsStatic && variable.Initializer == null)
+                            {
+                                yield return fieldDeclarationSyntax.Identifier().ValueText;
+                            }
                         }
+
+                        continue;
                     }
 
                     var propertyDeclarationSyntax = member as PropertyDeclarationSyntax;
                     if (propertyDeclarationSyntax != null)
                     {
                         var symbol = semanticModel.GetDeclaredSymbol(propertyDeclarationSyntax, cancellationToken);
-                        if (symbol.IsReadOnly && !symbol.IsStatic)
+                        if (symbol.IsReadOnly && !symbol.IsStatic && propertyDeclarationSyntax.Initializer == null)
                         {
                             yield return propertyDeclarationSyntax.Identifier().ValueText;
                         }

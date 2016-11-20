@@ -63,6 +63,25 @@ namespace Gu.Analyzers.Test.GU0004AssignAllReadOnlyMembersTests
         }
 
         [Test]
+        public async Task ConstructorSettingPropertiesIgnoringMutable()
+        {
+            var testCode = @"
+    public class Foo
+    {
+        public Foo(int a)
+        {
+            this.A = a;
+        }
+
+        public int A { get; }
+
+        public int B { get; private set; }
+    }";
+            await this.VerifyHappyPathAsync(testCode)
+                      .ConfigureAwait(false);
+        }
+
+        [Test]
         public async Task ConstructorSettingReadonlyFieldIgnoringInitialized()
         {
             var testCode = @"
@@ -75,6 +94,25 @@ namespace Gu.Analyzers.Test.GU0004AssignAllReadOnlyMembersTests
         {
             this.a = a;
         }
+    }";
+            await this.VerifyHappyPathAsync(testCode)
+                      .ConfigureAwait(false);
+        }
+
+        [Test]
+        public async Task ConstructorSettingPropertiesIgnoringInitialized()
+        {
+            var testCode = @"
+    public class Foo
+    {
+        public Foo(int a)
+        {
+            this.A = a;
+        }
+
+        public int A { get; }
+
+        public int B { get; } = 6;
     }";
             await this.VerifyHappyPathAsync(testCode)
                       .ConfigureAwait(false);

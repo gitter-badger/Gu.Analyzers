@@ -57,6 +57,8 @@
     <Compile Include="GU0033DontIgnoreReturnValueOfTypeIDisposableTests\HappyPath.cs" />
     <Compile Include="GU0031DisposeMemberTests\CodeFix.cs" />
     <Compile Include="GU0031DisposeMemberTests\HappyPath.cs" />
+    <Compile Include="GU0032DisposeBeforeReassigningTests\Diagnostics.cs" />
+    <Compile Include="GU0032DisposeBeforeReassigningTests\HappyPath.cs" />
     <Compile Include="GU0030UseUsingTests\Diagnostics.cs" />
     <Compile Include="GU0030UseUsingTests\HappyPath.cs" />
     <Compile Include="GU0005ExceptionArgumentsPositionsTests\CodeFix.cs" />
